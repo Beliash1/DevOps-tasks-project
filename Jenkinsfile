@@ -18,31 +18,23 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo 'Building Docker image...'
-                script {
-                    dockerImage = docker.build("${IMAGE_NAME}:${IMAGE_TAG}", "./backend")
-                }
+                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -t ${IMAGE_NAME}:latest ./backend"
             }
         }
 
         stage('Test') {
             steps {
                 echo 'Running basic health check test...'
-                script {
-                    docker.image("${IMAGE_NAME}:${IMAGE_TAG}").inside('--entrypoint=""') {
-                        sh 'python -c "import flask; print(\'Flask import OK\')"'
-                    }
-                }
+                sh "docker run --rm ${IMAGE_NAME}:${IMAGE_TAG} python -c \"import flask; print('Flask import OK')\""
             }
         }
 
         stage('Push to Docker Hub') {
             steps {
                 echo 'Pushing image to Docker Hub...'
-                script {
-                    sh "echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_CREDENTIALS_USR} --password-stdin"
-                    dockerImage.push("${IMAGE_TAG}")
-                    dockerImage.push("latest")
-                }
+                sh "echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_CREDENTIALS_USR} --password-stdin"
+                sh "docker push ${IMAGE_NAME}:${IMAGE_TAG}"
+                sh "docker push ${IMAGE_NAME}:latest"
             }
         }
 
@@ -63,7 +55,7 @@ pipeline {
             echo '❌ Pipeline failed. Check logs above.'
         }
         always {
-            sh 'docker logout'
+            sh 'docker logout || true'
         }
     }
 }
