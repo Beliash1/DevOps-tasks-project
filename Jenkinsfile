@@ -42,6 +42,7 @@ pipeline {
             steps {
                 echo 'Deploying application locally with docker-compose...'
                 sh 'docker compose down || true'
+                sh 'docker rm -f tasks_db tasks_backend || true'
                 sh 'docker compose up -d --build'
             }
         }
